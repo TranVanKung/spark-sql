@@ -18,5 +18,10 @@ public class Main {
         dataset.show();
         Long numberOfRows = dataset.count();
         System.out.println("There are " + numberOfRows + " records");
+
+        Row firstRow = dataset.first();
+//        String subject = firstRow.get(2).toString();
+        String subject = firstRow.getAs("subject").toString();
+        System.out.println(subject);
     }
 }
