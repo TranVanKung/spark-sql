@@ -14,19 +14,27 @@ public class Main {
         Logger.getLogger("org.apache").setLevel(Level.WARN);
 
         SparkSession spark = SparkSession.builder().appName("testingSql").master("local[*]").getOrCreate();
-//        Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
-        Dataset<Row> dataset = spark.read().option("header", true).option("inferSchema", true).csv("src/main/resources/exams/students.csv");
+        spark.udf().register("hasPassed",
+                (String grade, String subject) -> {
+                    if (subject.equals("Biology")) {
+                        if (grade.startsWith("A")) {
+                            return true;
+                        }
 
-//        dataset = dataset.groupBy("subject").agg(
-//                functions.max(functions.col("score")).alias("maxScore"),
-//                functions.min(functions.col("score")).alias("minScore")
-//        );
-        dataset = dataset.groupBy("subject")
-                .pivot("year")
-                .agg(
-                        functions.round(functions.avg(functions.col("score")), 2).alias("average"),
-                        functions.round(functions.stddev("score"), 2).alias("stddev")
-                );
+                        return false;
+                    }
+                    
+                    return grade.startsWith("A") || grade.startsWith("B") || grade.startsWith("C");
+                },
+                DataTypes.BooleanType
+        );
+
+        Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
+
+        dataset = dataset.withColumn("pass",
+                functions.callUDF("hasPassed", functions.col("grade"), functions.col("subject"))
+        );
+
         dataset.show();
     }
 }
