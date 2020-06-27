@@ -24,8 +24,9 @@ public class Main {
         Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
 
         dataset.createOrReplaceTempView("logging_table");
-        Dataset<Row> results = spark.sql("select level, date_format(datetime, 'MMMM') as month, count(1) as total " +
-                "from logging_table group by level, date_format(datetime, 'MMMM') order by cast(first(date_format(datetime, 'M')) as int), level");
+        Dataset<Row> results = spark.sql("select level, date_format(datetime, 'MMMM') as month, count(1) as total, first(cast(date_format(datetime, 'M') as int)) as monthnum " +
+                "from logging_table group by level, date_format(datetime, 'MMMM') order by monthnum, level");
+        results = results.drop("monthnum");
 
 //        dataset = dataset.select(functions.col("level"),
 //                functions.date_format(functions.col("datetime"), "MMMM").alias("month"),
@@ -35,10 +36,11 @@ public class Main {
 //        dataset.drop("monthnum");
 
         results.show();
+        results.explain();
 //        dataset.show();
 
-        Scanner scanner = new Scanner(System.in);
-        scanner.nextLine();
+//        Scanner scanner = new Scanner(System.in);
+//        scanner.nextLine();
 
     }
 }
