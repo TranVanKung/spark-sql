@@ -17,10 +17,16 @@ public class Main {
 //        Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
         Dataset<Row> dataset = spark.read().option("header", true).option("inferSchema", true).csv("src/main/resources/exams/students.csv");
 
-        dataset = dataset.groupBy("subject").agg(
-                functions.max(functions.col("score")).alias("maxScore"),
-                functions.min(functions.col("score")).alias("minScore")
-        );
+//        dataset = dataset.groupBy("subject").agg(
+//                functions.max(functions.col("score")).alias("maxScore"),
+//                functions.min(functions.col("score")).alias("minScore")
+//        );
+        dataset = dataset.groupBy("subject")
+                .pivot("year")
+                .agg(
+                        functions.round(functions.avg(functions.col("score")), 2).alias("average"),
+                        functions.round(functions.stddev("score"), 2).alias("stddev")
+                );
         dataset.show();
     }
 }
