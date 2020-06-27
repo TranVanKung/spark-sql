@@ -8,6 +8,10 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 public class Main {
     public static void main(String[] args) {
@@ -21,13 +25,11 @@ public class Main {
                 functions.date_format(functions.col("datetime"), "MMMM").alias("month"),
                 functions.date_format(functions.col("datetime"), "M").alias("monthnum").cast(DataTypes.IntegerType)
         );
-        dataset = dataset.groupBy(
-                functions.col("level"),
-                functions.col("month"),
-                functions.col("monthnum"))
-                .count();
-        dataset = dataset.orderBy("monthnum", "level");
-        dataset = dataset.drop(functions.col("monthnum"));
+
+        Object[] months = new Object[]{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Test"};
+        List<Object> columns = Arrays.asList(months);
+
+        dataset = dataset.groupBy("level").pivot("month", columns).count().na().fill(0);
 
         dataset.show(100);
     }
