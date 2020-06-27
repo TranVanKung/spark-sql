@@ -11,6 +11,7 @@ import org.apache.spark.sql.types.DataTypes;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
@@ -18,22 +19,26 @@ public class Main {
 
         SparkSession spark = SparkSession.builder().appName("testingSql").master("local[*]").getOrCreate();
 
-        Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
-        SimpleDateFormat input = new SimpleDateFormat("MMMM");
-        SimpleDateFormat output = new SimpleDateFormat("M");
+        spark.conf().set("spark.sql.shuffle.partitions", "10");
 
-        spark.udf().register("monthNum",
-                (String month) -> {
-                    Date inputDate = input.parse(month);
-                    return Integer.parseInt(output.format(inputDate));
-                },
-                DataTypes.IntegerType);
+        Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
 
         dataset.createOrReplaceTempView("logging_table");
-
         Dataset<Row> results = spark.sql("select level, date_format(datetime, 'MMMM') as month, count(1) as total " +
-                "from logging_table group by level, date_format(datetime, 'MMMM') order by monthNum(month), level");
+                "from logging_table group by level, date_format(datetime, 'MMMM') order by cast(first(date_format(datetime, 'M')) as int), level");
+
+//        dataset = dataset.select(functions.col("level"),
+//                functions.date_format(functions.col("datetime"), "MMMM").alias("month"),
+//                functions.date_format(functions.col("datetime"), "M").alias("monthnum").cast(DataTypes.IntegerType)
+//        );
+//        dataset = dataset.groupBy("level", "month", "monthnum").count().as("total").orderBy("monthnum");
+//        dataset.drop("monthnum");
 
         results.show();
+//        dataset.show();
+
+        Scanner scanner = new Scanner(System.in);
+        scanner.nextLine();
+
     }
 }
