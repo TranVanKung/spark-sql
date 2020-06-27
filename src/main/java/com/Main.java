@@ -31,8 +31,7 @@ public class Main {
         Dataset<Row> dataset = spark.createDataFrame(inMemory, schema);
 
         dataset.createOrReplaceTempView("logging_table");
-//        Dataset<Row> results = spark.sql("select level, count(datetime) from logging_table group by level order by level");
-        Dataset<Row> results = spark.sql("select level, collect_list(datetime) from logging_table group by level order by level");
+        Dataset<Row> results = spark.sql("select level, date_format(datetime, 'MMMM') as month from logging_table");
 
         results.show();
     }
